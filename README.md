@@ -34,3 +34,5 @@ Jupyter Notebook
 * pygod == 1.1.0
 * sklearn
 * functools
+
+### .ipynb files worked on JupiterNotebook
