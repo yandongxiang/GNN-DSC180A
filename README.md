@@ -28,10 +28,9 @@ bash scripts/amazon_train_0.4.sh
 ### dependencies
 Jupyter Notebook
 * torch
-* torchvision
-* torchaudio
-* torch-geometric
-* numpy
-* networkx
-* matplotlib
-* scikit-lear
+* Numpy==1.21.5
+* Pytorch==1.10.1
+* DGL==0.8.2
+* pygod == 1.1.0
+* sklearn
+* functools
