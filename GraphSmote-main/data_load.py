@@ -373,13 +373,13 @@ def load_data(args):
 
     elif dataset_str == 'reddit':
         data = pygod_load_data(dataset_str)
-        random.seed(42)
 
         full_graph = dgl.graph((data.edge_index[0], data.edge_index[1]))
         full_graph.ndata['feature'] = data.x
         full_graph.ndata['label'] = data.y.type(torch.LongTensor)
 
         # Select a random subset of nodes
+        random.seed(42)
         subset_size = int(full_graph.num_nodes() * 0.1)  # For example, 10% of the full dataset
         subset_nodes = random.sample(range(full_graph.num_nodes()), subset_size)
 

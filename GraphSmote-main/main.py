@@ -14,6 +14,8 @@ import random
 import ipdb
 import copy
 
+import matplotlib.pyplot as plt
+
 #from torch.utils.tensorboard import SummaryWriter
 
 # Training setting
@@ -290,12 +292,14 @@ def test(epoch = 0):
           "loss= {:.4f}".format(loss_test.item()),
           "accuracy= {:.4f}".format(acc_test.item()))
 
-    utils.print_class_acc(output[idx_test], labels[idx_test], class_num_mat[:,2], pre='test')
+    auc_roc = utils.print_class_acc(output[idx_test], labels[idx_test], class_num_mat[:,2], pre='test')
 
     '''
     if epoch==40:
         torch
     '''
+
+    return auc_roc
 
 
 def save_model(epoch):
@@ -332,18 +336,30 @@ if args.load is not None:
     load_model(args.load)
 
 t_total = time.time()
+
+auc_rocs = []
 for epoch in range(args.epochs):
     train(epoch)
 
     if epoch % 10 == 0:
-        test(epoch)
+        auc_roc = test(epoch)
+        auc_rocs.append(auc_roc)
 
     if epoch % 100 == 0:
         save_model(epoch)
 
+plt.figure(figsize=(10, 6))
+plt.plot()
+plt.plot(auc_rocs, color='b')
+plt.title('Trending of AUC-ROC Scores Over Iterations')
+plt.xlabel('Every 10 Epochs')
+plt.ylabel('AUC-ROC Score')
+plt.show()
 
 print("Optimization Finished!")
 print("Total time elapsed: {:.4f}s".format(time.time() - t_total))
+
+
 
 # Testing
 test()

@@ -32,7 +32,7 @@ def get_parser():
     parser.add_argument('--dataset', type=str, default='cora')
     parser.add_argument('--size', type=int, default=100)
 
-    parser.add_argument('--epochs', type=int, default=500,
+    parser.add_argument('--epochs', type=int, default=501,
                 help='Number of epochs to train.')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--weight_decay', type=float, default=5e-4)
@@ -193,7 +193,7 @@ def print_class_acc(output, labels, class_num_list, pre='valid'):
     macro_F = f1_score(labels.detach(), torch.argmax(output, dim=-1).detach(), average='macro')
     print(str(pre)+' current auc-roc score: {:f}, current macro_F score: {:f}'.format(auc_score,macro_F))
 
-    return
+    return auc_score
 
 def src_upsample(adj,features,labels,idx_train, portion=1.0, im_class_num=3):
     c_largest = labels.max().item()
