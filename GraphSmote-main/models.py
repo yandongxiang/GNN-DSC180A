@@ -215,6 +215,7 @@ class GraphAttentionLayer(nn.Module):
 
     def __init__(self, in_features, out_features, dropout, alpha, concat=True):
         super(GraphAttentionLayer, self).__init__()
+
         self.dropout = dropout
         self.in_features = in_features
         self.out_features = out_features

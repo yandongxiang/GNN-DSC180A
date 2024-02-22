@@ -6,6 +6,7 @@ import ipdb
 from scipy.io import loadmat
 import utils
 from collections import defaultdict
+import random
 
 import warnings
 
@@ -275,10 +276,17 @@ def load_data(args):
 
     if dataset_str == 'yelp':
         dataset = FraudYelpDataset()
-        graph = dataset[0]
+        full_graph = dataset[0]
 
-        graph = dgl.to_homogeneous(graph, ndata=['feature', 'label', 'train_mask', 'val_mask', 'test_mask'])
-        graph = dgl.add_self_loop(graph)
+        full_graph = dgl.to_homogeneous(full_graph, ndata=['feature', 'label', 'train_mask', 'val_mask', 'test_mask'])
+        full_graph = dgl.add_self_loop(full_graph)
+
+        # Select a random subset
+        random.seed(42)
+        subset_size = int(full_graph.num_nodes() * 0.03)
+        subset_nodes = random.sample(range(full_graph.num_nodes()), subset_size)
+
+        graph = full_graph.subgraph(subset_nodes)
 
         # important modification by Yandong
         # train_mask, val_mask, test_mask = graph_split(dataset_str, graph.ndata['label'], train_ratio=0.3,
@@ -317,10 +325,17 @@ def load_data(args):
 
     elif dataset_str == 'amazon':
         dataset = FraudAmazonDataset()
-        graph = dataset[0]
+        full_graph = dataset[0]
 
-        graph = dgl.to_homogeneous(graph, ndata=['feature', 'label', 'train_mask', 'val_mask', 'test_mask'])
-        graph = dgl.add_self_loop(graph)
+        full_graph = dgl.to_homogeneous(full_graph, ndata=['feature', 'label', 'train_mask', 'val_mask', 'test_mask'])
+        full_graph = dgl.add_self_loop(full_graph)
+
+        # Select a random subset
+        random.seed(42)
+        subset_size = int(full_graph.num_nodes() * 0.1)
+        subset_nodes = random.sample(range(full_graph.num_nodes()), subset_size)
+
+        graph = full_graph.subgraph(subset_nodes)
 
         # train_mask, val_mask, test_mask = graph_split(dataset_str, graph.ndata['label'], train_ratio=args.train_ratio,
         #                                               folds=args.ntrials)
@@ -358,9 +373,20 @@ def load_data(args):
 
     elif dataset_str == 'reddit':
         data = pygod_load_data(dataset_str)
-        graph = dgl.graph((data.edge_index[0], data.edge_index[1]))
-        graph.ndata['feature'] = data.x
-        graph.ndata['label'] = data.y.type(torch.LongTensor)
+        random.seed(42)
+
+        full_graph = dgl.graph((data.edge_index[0], data.edge_index[1]))
+        full_graph.ndata['feature'] = data.x
+        full_graph.ndata['label'] = data.y.type(torch.LongTensor)
+
+        # Select a random subset of nodes
+        subset_size = int(full_graph.num_nodes() * 0.1)  # For example, 10% of the full dataset
+        subset_nodes = random.sample(range(full_graph.num_nodes()), subset_size)
+
+        # Extract the subgraph containing only the selected nodes
+        subgraph = full_graph.subgraph(subset_nodes)
+        subgraph.ndata['feature'] = full_graph.ndata['feature'][subset_nodes]
+        subgraph.ndata['label'] = full_graph.ndata['label'][subset_nodes]
 
         # train_mask, val_mask, test_mask = graph_split(dataset_str, graph.ndata['label'], train_ratio=args.train_ratio, folds=args.ntrials)
 
@@ -370,13 +396,13 @@ def load_data(args):
         #     train_mask, val_mask, test_mask, graph
     
         # Normalize features
-        features = torch.tensor(normalize_features(graph.ndata['feature'], norm_row=False), dtype=torch.float)
-        labels = graph.ndata['label']
+        features = torch.tensor(normalize_features(subgraph.ndata['feature'], norm_row=False), dtype=torch.float)
+        labels = subgraph.ndata['label']
 
         # Convert the DGL graph to an adjacency matrix
-        src, dst = graph.edges()
+        src, dst = subgraph.edges()
         data = torch.ones(src.size(0))
-        adj = sp.coo_matrix((data.numpy(), (src.numpy(), dst.numpy())), shape=(graph.num_nodes(), graph.num_nodes()))
+        adj = sp.coo_matrix((data.numpy(), (src.numpy(), dst.numpy())), shape=(subgraph.num_nodes(), subgraph.num_nodes()))
 
          # Ensure the adjacency matrix is of type float
         adj = adj.astype(np.float32)
