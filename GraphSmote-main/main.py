@@ -117,7 +117,7 @@ else:
                 nembed=args.nhid,
                 dropout=args.dropout)
         classifier = models.Classifier(nembed=args.nhid, 
-                nhid=args.nhid, 
+                nhid=args.nhid,  
                 nclass=labels.max().item() + 1, 
                 dropout=args.dropout)
     elif args.model == 'gcn':
@@ -179,7 +179,23 @@ def train(epoch):
 
     if args.setting == 'recon_newG' or args.setting == 'recon' or args.setting == 'newG_cls':
         ori_num = labels.shape[0]
+
+        # plt.figure(figsize=(8, 8))
+        # plt.imshow(adj.detach().to_dense().numpy(), cmap='Reds')
+        # plt.title('Adjacency Matrix Visualization')
+        # plt.colorbar()
+        # plt.show()
+
         embed, labels_new, idx_train_new, adj_up = utils.recon_upsample(embed, labels, idx_train, adj=adj.detach().to_dense(),portion=args.up_scale, im_class_num=im_class_num)
+
+        # print(adj_up)
+
+        # plt.figure(figsize=(8, 8))
+        # plt.imshow(adj_up.detach().numpy(), cmap='Reds')
+        # plt.title('Adjacency Matrix Visualization')
+        # plt.colorbar()
+        # plt.show()
+
         generated_G = decoder(embed)
 
         loss_rec = utils.adj_mse_loss(generated_G[:ori_num, :][:, :ori_num], adj.detach().to_dense())

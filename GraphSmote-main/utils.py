@@ -32,7 +32,7 @@ def get_parser():
     parser.add_argument('--dataset', type=str, default='cora')
     parser.add_argument('--size', type=int, default=100)
 
-    parser.add_argument('--epochs', type=int, default=501,
+    parser.add_argument('--epochs', type=int, default=301,
                 help='Number of epochs to train.')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--weight_decay', type=float, default=5e-4)
