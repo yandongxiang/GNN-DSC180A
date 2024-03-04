@@ -184,7 +184,12 @@ def train(epoch):
         embed, labels_new, idx_train_new, adj_up = utils.recon_upsample(embed, labels, idx_train, adj=adj.detach().to_dense(), 
                                                                         portion=args.up_scale, im_class_num=im_class_num)
         
-
+        # plt.figure(figsize=(8, 8))
+        # plt.imshow(adj_up.detach().numpy(), cmap='Reds')
+        # plt.title('Adjacency Matrix Visualization')
+        # plt.colorbar()
+        # plt.show()
+        
         generated_G = decoder(embed)
 
         loss_rec = utils.adj_mse_loss(generated_G[:ori_num, :][:, :ori_num], adj.detach().to_dense())
@@ -296,12 +301,14 @@ def test(epoch = 0):
           "loss= {:.4f}".format(loss_test.item()),
           "accuracy= {:.4f}".format(acc_test.item()))
 
-    utils.print_class_acc(output[idx_test], labels[idx_test], class_num_mat[:,2], pre='test')
+    auc_roc = utils.print_class_acc(output[idx_test], labels[idx_test], class_num_mat[:,2], pre='test')
 
     '''
     if epoch==40:
         torch
     '''
+
+    return auc_roc
 
 
 def save_model(epoch):
@@ -338,14 +345,25 @@ if args.load is not None:
     load_model(args.load)
 
 t_total = time.time()
+
+auc_rocs = []
 for epoch in range(args.epochs):
     train(epoch)
 
     if epoch % 10 == 0:
-        test(epoch)
+        auc_roc = test(epoch)
+        auc_rocs.append(auc_roc)
 
     if epoch % 100 == 0:
         save_model(epoch)
+
+plt.figure(figsize=(10, 6))
+plt.plot()
+plt.plot(auc_rocs, color='b')
+plt.title('Trending of AUC-ROC Scores Over Iterations')
+plt.xlabel('Every 10 Epochs')
+plt.ylabel('AUC-ROC Score')
+plt.show()
 
 
 print("Optimization Finished!")

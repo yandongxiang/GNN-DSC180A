@@ -510,7 +510,6 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     return torch.sparse.FloatTensor(indices, values, shape)
 
 
-
 def find_shown_index(adj, center_ind, steps = 2):
     seen_nodes = {}
     shown_index = []

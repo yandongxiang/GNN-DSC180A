@@ -35,7 +35,7 @@ def get_parser():
     parser.add_argument('--dataset', type=str, default='cora')
     parser.add_argument('--size', type=int, default=100)
 
-    parser.add_argument('--epochs', type=int, default=501,
+    parser.add_argument('--epochs', type=int, default=301,
                 help='Number of epochs to train.')
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--weight_decay', type=float, default=5e-4)
@@ -196,7 +196,7 @@ def print_class_acc(output, labels, class_num_list, pre='valid'):
     macro_F = f1_score(labels.detach(), torch.argmax(output, dim=-1).detach(), average='macro')
     print(str(pre)+' current auc-roc score: {:f}, current macro_F score: {:f}'.format(auc_score,macro_F))
 
-    return
+    return auc_score
 
 def src_upsample(adj,features,labels,idx_train, portion=1.0, im_class_num=3):
     c_largest = labels.max().item()
@@ -359,40 +359,37 @@ def src_smote(adj,features,labels,idx_train, portion=1.0, im_class_num=3):
 #         embeddings = model(features, edge_index)
 #     return embeddings
 
-# def compute_cosine_similarity(embeddings):
-#     norm_embeddings = F.normalize(embeddings, p=2, dim=1)
-#     cosine_sim_matrix = torch.mm(norm_embeddings, norm_embeddings.t())
-    return cosine_sim_matrix
+def compute_similarity(embeddings):
+    # Compute cosine similarity between all pairs of node embeddings
+    similarity = F.cosine_similarity(embeddings.unsqueeze(1), embeddings.unsqueeze(0), dim=2)
+    return similarity
 
-def compute_cosine_similarity(features):
-    norm_features = F.normalize(features, p=2, dim=1)
-    similarity_matrix = torch.mm(norm_features, norm_features.t())
-    return similarity_matrix
+# def compute_cosine_similarity(features):
+#     norm_features = F.normalize(features, p=2, dim=1)
+#     similarity_matrix = torch.mm(norm_features, norm_features.t())
+#     return similarity_matrix
 
-def compute_homey_adj_matrix(features, num_nodes):
-    cosine_similarity_matrix = compute_cosine_similarity(features)
-    # Assuming the original adjacency matrix is not available here,
-    # this function should be adapted to integrate the original adjacency matrix
-    # to mask the cosine similarity matrix accordingly.
-    return cosine_similarity_matrix
+def sparsify_graph(homey_adj_matrix, threshold=0.2, k=5):
+    # Filter unnecessary neighbors
+    filtered_adj_matrix = torch.where(homey_adj_matrix.abs() > threshold, homey_adj_matrix, torch.zeros_like(homey_adj_matrix))
 
-# def sparsify_graph(cosine_sim_matrix, adj=None, top_k=None, threshold=None):
-#     if adj is not None:
-#         cosine_sim_matrix *= adj
-#     if threshold is not None:
-#         mask = cosine_sim_matrix > threshold
-#         sparsified_adj = torch.where(mask, cosine_sim_matrix, torch.zeros_like(cosine_sim_matrix))
-#     elif top_k is not None:
-#         values, indices = torch.topk(cosine_sim_matrix, k=top_k, dim=-1)
-#         sparsified_adj = torch.zeros_like(cosine_sim_matrix).scatter_(1, indices, values)
-#     else:
-#         sparsified_adj = cosine_sim_matrix
+    # Discover potential neighbors via k-nearest neighbors (kNN)
+    # For simplicity, we perform a deterministic selection of top-k values in each row
+    topk_values, topk_indices = torch.topk(filtered_adj_matrix, k=k, dim=1)
+    
+    # Initialize a new sparsified adjacency matrix with zeros
+    sparsified_adj_matrix = torch.zeros_like(homey_adj_matrix)
+    
+    # Populate the sparsified adjacency matrix with top-k values
+    row_indices = torch.arange(homey_adj_matrix.size(0)).unsqueeze(1).expand(-1, k)
+    sparsified_adj_matrix[row_indices, topk_indices] = topk_values
+    
+    return sparsified_adj_matrix
+
+# def sparsify_graph(homey_adj, threshold=0.5):
+#     # Apply a threshold to retain only edges with a similarity above the threshold
+#     sparsified_adj = torch.where(homey_adj > threshold, homey_adj, torch.zeros_like(homey_adj))
 #     return sparsified_adj
-
-def sparsify_graph(homey_adj, threshold=0.5):
-    # Apply a threshold to retain only edges with a similarity above the threshold
-    sparsified_adj = torch.where(homey_adj > threshold, homey_adj, torch.zeros_like(homey_adj))
-    return sparsified_adj
 
 #
 #
@@ -431,7 +428,7 @@ def recon_upsample(embed, labels, idx_train, adj=None, portion=1.0, im_class_num
     # Update the homey adjacency matrix and sparsify after upsampling
     if adj is not None:
 
-        homey_adj = compute_homey_adj_matrix(embed, embed.shape[0])
+        homey_adj = compute_similarity(embed)
         sparsified_adj = sparsify_graph(homey_adj)
         adj = sparsified_adj  # Use sparsified_adj for further operations
 
