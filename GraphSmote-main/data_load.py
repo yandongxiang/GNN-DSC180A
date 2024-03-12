@@ -38,216 +38,6 @@ def get_parser():
     
     return parser
 
-# def load_data(path="data/cora/", dataset="cora"):#modified from code: pygcn
-#     """Load citation network dataset (cora only for now)"""
-#     #input: idx_features_labels, adj
-#     #idx,labels are not required to be processed in advance
-#     #adj: save in the form of edges. idx1 idx2 
-#     #output: adj, features, labels are all torch.tensor, in the dense form
-#     #-------------------------------------------------------
-
-#     print('Loading {} dataset...'.format(dataset))
-
-#     idx_features_labels = np.genfromtxt("{}{}.content".format(path, dataset),
-#                                         dtype=np.dtype(str))
-#     features = sp.csr_matrix(idx_features_labels[:, 1:-1], dtype=np.float32)
-#     labels = idx_features_labels[:, -1]
-#     set_labels = set(labels)
-#     classes_dict = {c: np.arange(len(set_labels))[i] for i, c in enumerate(set_labels)}
-#     classes_dict = {'Neural_Networks': 0, 'Reinforcement_Learning': 1, 'Probabilistic_Methods': 2, 'Case_Based': 3, 'Theory': 4, 'Rule_Learning': 5, 'Genetic_Algorithms': 6}
-
-#     #ipdb.set_trace()
-#     labels = np.array(list(map(classes_dict.get, labels)))
-
-#     # build graph
-#     idx = np.array(idx_features_labels[:, 0], dtype=np.int32)
-#     idx_map = {j: i for i, j in enumerate(idx)}
-#     edges_unordered = np.genfromtxt("{}{}.cites".format(path, dataset),
-#                                     dtype=np.int32)
-#     edges = np.array(list(map(idx_map.get, edges_unordered.flatten())),
-#                      dtype=np.int32).reshape(edges_unordered.shape)
-#     adj = sp.coo_matrix((np.ones(edges.shape[0]), (edges[:, 0], edges[:, 1])),
-#                         shape=(labels.shape[0], labels.shape[0]),
-#                         dtype=np.float32)
-
-#     # build symmetric adjacency matrix
-#     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-
-#     features = normalize(features)
-
-#     features = torch.FloatTensor(np.array(features.todense()))
-#     labels = torch.LongTensor(labels)
-
-#     utils.print_edges_num(adj.todense(), labels)
-
-#     adj = sparse_mx_to_torch_sparse_tensor(adj)
-#     #adj = torch.FloatTensor(np.array(adj.todense()))
-
-#     return adj, features, labels
-
-
-# def Extract_graph(edgelist, fake_node, node_num):
-    
-#     node_list = range(node_num+1)[1:]
-#     node_set = set(node_list)
-#     adj_1 = sp.coo_matrix((np.ones(len(edgelist)), (edgelist[:, 0], edgelist[:, 1])), shape=(edgelist.max()+1, edgelist.max()+1), dtype=np.float32)
-#     adj_1 = adj_1 + adj_1.T.multiply(adj_1.T > adj_1) - adj_1.multiply(adj_1.T > adj_1)
-#     adj_csr = adj_1.tocsr()
-#     for i in np.arange(node_num):
-#         for j in adj_csr[i].nonzero()[1]:
-#             node_set.add(j)
-
-#     node_set_2 = node_set
-#     '''
-#     node_set_2 = set(node_list)
-#     for i in node_set:
-#         for j in adj_csr[i].nonzero()[1]:
-#             node_set_2.add(j)
-#     '''
-#     node_list = np.array(list(node_set_2))
-#     node_list = np.sort(node_list)
-#     adj_new = adj_csr[node_list,:]
-
-#     node_mapping = dict(zip(node_list, range(0, len(node_list), 1)))
-
-#     edge_list = []
-#     for i in range(len(node_list)):
-#         for j in adj_new[i].nonzero()[1]:
-#             if j in node_list:
-#                 edge_list.append([i, node_mapping[j]])
-
-#     edge_list = np.array(edge_list)
-#     #adj_coo_new = sp.coo_matrix((np.ones(len(edge_list)), (edge_list[:,0], edge_list[:,1])), shape=(len(node_list), len(node_list)), dtype=np.float32)
-
-#     label_new = np.array(list(map(lambda x: 1 if x in fake_node else 0, node_list)))
-#     np.savetxt('data/twitter/sub_twitter_edges', edge_list,fmt='%d')
-#     np.savetxt('data/twitter/sub_twitter_labels', label_new,fmt='%d')
-
-#     return
-
-# def load_data_twitter():
-#     adj_path = 'data/twitter/twitter.csv'
-#     fake_id_path = 'data/twitter/twitter_fake_ids.csv'
-
-#     adj = np.loadtxt(adj_path, delimiter=',', skiprows=1)#(total: 16011444 edges, 5384162 nodes)
-#     adj = adj.astype(int)
-#     adj = np.array(adj,dtype=int)
-#     fake_node = np.genfromtxt(fake_id_path, delimiter=',',skip_header=1, usecols=(0), dtype=int)#(12437)
-    
-#     #'''#using broad walk
-#     if False:
-#         Extract_graph(adj, fake_node, node_num=1000)
-
-#     #'''
-
-#     '''generated edgelist for deepwalk for embedding
-#     np.savetxt('data/twitter/twitter_edges', adj,fmt='%d')
-#     '''
-
-#     #process adj:
-#     adj[adj>50000] = 0 #save top 50000 node, start from 1
-#     adj = sp.coo_matrix((np.ones(len(adj)), (adj[:, 0], adj[:, 1])), shape=(adj.max()+1, adj.max()+1), dtype=np.float32)
-#     adj = np.array(adj.todense())
-#     adj = adj[1:, 1:]
-#     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-#     adj = adj.tocoo()
-
-#     fake_node = np.sort(fake_node)
-#     fake_node = fake_node[fake_node<=50000]
-#     fake_id = fake_node-1
-
-#     #process label:
-#     labels = np.zeros((50000,),dtype=int)
-#     labels[fake_id] = 1
-
-
-#     #filtering out outliers:
-#     node_degree = adj.sum(axis=1)
-#     chosen_idx = np.arange(50000)[node_degree>=4]
-#     ipdb.set_trace()
-
-
-#     #embed need to be read sequentially, due to the size
-#     embed = np.genfromtxt('data/twitter/twitter.embeddings_64', max_rows=50000)
-#     feature = np.zeros((embed.shape[0],embed.shape[1]-1))
-#     feature[embed[:,0].astype(int),:] = embed[:,1:]
-#     features = normalize(feature)
-
-#     adj = adj[chosen_idx,:][:,chosen_idx]     #shape:
-#     labels = labels[chosen_idx]     #shape:
-#     features = features[chosen_idx]
-
-    
-
-#     features = torch.FloatTensor(np.array(features.todense()))
-#     labels = torch.LongTensor(labels)
-
-#     utils.print_edges_num(adj.todense(), labels)
-
-#     adj = sparse_mx_to_torch_sparse_tensor(adj)
-
-#     return adj, features, labels
-
-# def load_sub_data_twitter():
-#     adj_path = 'data/twitter/sub_twitter_edges'
-#     fake_id_path = 'data/twitter/sub_twitter_labels'
-
-#     adj = np.loadtxt(adj_path, delimiter=' ', dtype=int)#
-#     adj = np.array(adj,dtype=int)
-#     labels = np.genfromtxt(fake_id_path, dtype=int)#(63167)
-    
-#     #process adj:
-#     adj = sp.coo_matrix((np.ones(len(adj)), (adj[:, 0], adj[:, 1])), shape=(adj.max()+1, adj.max()+1), dtype=np.float32)
-#     adj = adj + adj.T.multiply(adj.T > adj) - adj.multiply(adj.T > adj)
-
-#     #filtering out outliers:
-#     node_degree = np.array(adj.sum(axis=1)).reshape(-1)
-#     chosen_idx = np.arange(adj.shape[0])[node_degree>=4]#44982 nodes were left
-
-#     #embed need to be read sequentially, due to the size
-#     embed = np.genfromtxt('data/twitter/sub_node_embedding_64', skip_header=1)
-#     feature = np.zeros((embed.shape[0],embed.shape[1]-1))
-#     feature[embed[:,0].astype(int),:] = embed[:,1:]
-#     features = normalize(feature)
-
-#     features = torch.FloatTensor(np.array(features))
-#     labels = torch.LongTensor(labels)
-
-#     utils.print_edges_num(adj.todense(), labels)
-
-#     adj = sparse_mx_to_torch_sparse_tensor(adj)
-
-#     return adj, features, labels
-
-# def load_data_Blog():#
-#     #--------------------
-#     #
-#     #--------------------
-#     mat = loadmat('data/BlogCatalog/blogcatalog.mat')
-#     adj = mat['network']
-#     label = mat['group']
-
-#     embed = np.loadtxt('data/BlogCatalog/blogcatalog.embeddings_64')
-#     feature = np.zeros((embed.shape[0],embed.shape[1]-1))
-#     feature[embed[:,0].astype(int),:] = embed[:,1:]
-
-#     features = normalize(feature)
-#     labels = np.array(label.todense().argmax(axis=1)).squeeze()
-
-#     labels[labels>16] = labels[labels>16]-1
-
-#     print("change labels order, imbalanced classes to the end.")
-#     #ipdb.set_trace()
-#     labels = refine_label_order(labels)
-
-#     features = torch.FloatTensor(features)
-#     labels = torch.LongTensor(labels)
-
-#     #adj = torch.FloatTensor(np.array(adj.todense()))
-#     adj = sparse_mx_to_torch_sparse_tensor(adj)
-
-#     return adj, features, labels
-
 def refine_label_order(labels):
     max_label = labels.max()
     j = 0
@@ -287,16 +77,6 @@ def load_data(args):
         subset_nodes = random.sample(range(full_graph.num_nodes()), subset_size)
 
         graph = full_graph.subgraph(subset_nodes)
-
-        # important modification by Yandong
-        # train_mask, val_mask, test_mask = graph_split(dataset_str, graph.ndata['label'], train_ratio=0.3,
-        #                                               folds=args.ntrials)
-
-        # x_data = torch.tensor(normalize_features(graph.ndata['feature'], norm_row=False), dtype=torch.float)
-
-        # return x_data, graph.ndata['feature'].size()[-1], graph.ndata['label'], 2, \
-        #     train_mask, val_mask, test_mask, graph
-        ## graph.ndata['train_mask'].bool(), graph.ndata['val_mask'].bool(), graph.ndata['test_mask'].bool()
     
         # Normalize features
         features = torch.tensor(normalize_features(graph.ndata['feature'], norm_row=False), dtype=torch.float)
@@ -337,16 +117,7 @@ def load_data(args):
 
         graph = full_graph.subgraph(subset_nodes)
 
-        # train_mask, val_mask, test_mask = graph_split(dataset_str, graph.ndata['label'], train_ratio=args.train_ratio,
-        #                                               folds=args.ntrials)
-
-        # graph.ndata['feature'] = torch.tensor(normalize_features(graph.ndata['feature'], norm_row=True),
-        #                                       dtype=torch.float)
-
-        # return graph.ndata['feature'], graph.ndata['feature'].size()[-1], graph.ndata['label'], 2, \
-        #     train_mask, val_mask, test_mask, graph
-
-         # Normalize features
+        # Normalize features
         features = torch.tensor(normalize_features(graph.ndata['feature'], norm_row=False), dtype=torch.float)
         labels = graph.ndata['label']
 
@@ -387,13 +158,6 @@ def load_data(args):
         subgraph = full_graph.subgraph(subset_nodes)
         subgraph.ndata['feature'] = full_graph.ndata['feature'][subset_nodes]
         subgraph.ndata['label'] = full_graph.ndata['label'][subset_nodes]
-
-        # train_mask, val_mask, test_mask = graph_split(dataset_str, graph.ndata['label'], train_ratio=args.train_ratio, folds=args.ntrials)
-
-        # graph.ndata['feature'] = torch.tensor(normalize_features(graph.ndata['feature'], norm_row=True), dtype=torch.float)
-
-        # return graph.ndata['feature'], graph.ndata['feature'].size()[-1], graph.ndata['label'], 2, \
-        #     train_mask, val_mask, test_mask, graph
     
         # Normalize features
         features = torch.tensor(normalize_features(subgraph.ndata['feature'], norm_row=False), dtype=torch.float)
@@ -475,8 +239,6 @@ def graph_split(dataset, labels, train_ratio=0.01, folds=5):
     test_mask = torch.vstack(test_mask)
 
     return train_mask, valid_mask, test_mask
-        
-
 
 
 def normalize(mx):

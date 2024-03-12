@@ -32,19 +32,6 @@ if args.cuda:
     torch.cuda.manual_seed(args.seed)
 '''
 
-# if args.dataset == 'cora':
-#     adj, features, labels = data_load.load_data()
-#     class_sample_num = 20
-#     im_class_num = 3
-# elif args.dataset == 'BlogCatalog':
-#     adj, features, labels = data_load.load_data_Blog()
-#     im_class_num = 14 #set it to be the number less than 100
-#     class_sample_num = 20 #not used
-# elif args.dataset == 'twitter':
-#     adj, features, labels = data_load.load_sub_data_twitter()
-#     im_class_num = 1
-#     class_sample_num = 20 #not used
-
 # Load data
 if args.dataset == 'yelp':
     adj, features, labels = data_load.load_data('yelp')
@@ -71,7 +58,7 @@ for i in range(labels.max().item() + 1):
     else:
         c_train_num.append(class_sample_num)
 
-idx_train, idx_val, idx_test, class_num_mat = utils.split_arti(labels, c_train_num)
+idx_train, idx_val, idx_test, class_num_mat = utils.split_genuine(labels)
 
 #method_1: oversampling in input domain
 if args.setting == 'upsampling':
@@ -202,7 +189,6 @@ def train(epoch):
         
         #ipdb.set_trace()
 
-
         if not args.opt_new_G:
             adj_new = copy.deepcopy(generated_G.detach())
             threshold = 0.5
@@ -250,7 +236,6 @@ def train(epoch):
 
     #ipdb.set_trace()
     output = classifier(embed, adj_new)
-
 
 
     if args.setting == 'reweight':

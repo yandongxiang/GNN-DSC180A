@@ -100,52 +100,52 @@ def split_arti(labels, c_train_num):
 
     return train_idx, val_idx, test_idx, c_num_mat
 
-# def split_genuine(labels):
-#     #labels: n-dim Longtensor, each element in [0,...,m-1].
-#     #cora: m=7
-#     num_classes = len(set(labels.tolist()))
-#     c_idxs = [] # class-wise index
-#     train_idx = []
-#     val_idx = []
-#     test_idx = []
-#     c_num_mat = np.zeros((num_classes,3)).astype(int)
+def split_genuine(labels):
+    #labels: n-dim Longtensor, each element in [0,...,m-1].
+    #cora: m=7
+    num_classes = len(set(labels.tolist()))
+    c_idxs = [] # class-wise index
+    train_idx = []
+    val_idx = []
+    test_idx = []
+    c_num_mat = np.zeros((num_classes,3)).astype(int)
 
-#     for i in range(num_classes):
-#         c_idx = (labels==i).nonzero()[:,-1].tolist()
-#         c_num = len(c_idx)
-#         print('{:d}-th class sample number: {:d}'.format(i,len(c_idx)))
-#         random.shuffle(c_idx)
-#         c_idxs.append(c_idx)
+    for i in range(num_classes):
+        c_idx = (labels==i).nonzero()[:,-1].tolist()
+        c_num = len(c_idx)
+        print('{:d}-th class sample number: {:d}'.format(i,len(c_idx)))
+        random.shuffle(c_idx)
+        c_idxs.append(c_idx)
 
-#         if c_num <4:
-#             if c_num < 3:
-#                 print("too small class type")
-#                 ipdb.set_trace()
-#             c_num_mat[i,0] = 1
-#             c_num_mat[i,1] = 1
-#             c_num_mat[i,2] = 1
-#         else:
-#             c_num_mat[i,0] = int(c_num/4)
-#             c_num_mat[i,1] = int(c_num/4)
-#             c_num_mat[i,2] = int(c_num/2)
-
-
-#         train_idx = train_idx + c_idx[:c_num_mat[i,0]]
-
-#         val_idx = val_idx + c_idx[c_num_mat[i,0]:c_num_mat[i,0]+c_num_mat[i,1]]
-#         test_idx = test_idx + c_idx[c_num_mat[i,0]+c_num_mat[i,1]:c_num_mat[i,0]+c_num_mat[i,1]+c_num_mat[i,2]]
-
-#     random.shuffle(train_idx)
-
-    # #ipdb.set_trace()
-
-    # train_idx = torch.LongTensor(train_idx)
-    # val_idx = torch.LongTensor(val_idx)
-    # test_idx = torch.LongTensor(test_idx)
-    # #c_num_mat = torch.LongTensor(c_num_mat)
+        if c_num <4:
+            if c_num < 3:
+                print("too small class type")
+                ipdb.set_trace()
+            c_num_mat[i,0] = 1
+            c_num_mat[i,1] = 1
+            c_num_mat[i,2] = 1
+        else:
+            c_num_mat[i,0] = int(c_num/4)
+            c_num_mat[i,1] = int(c_num/4)
+            c_num_mat[i,2] = int(c_num/2)
 
 
-    # return train_idx, val_idx, test_idx, c_num_mat
+        train_idx = train_idx + c_idx[:c_num_mat[i,0]]
+
+        val_idx = val_idx + c_idx[c_num_mat[i,0]:c_num_mat[i,0]+c_num_mat[i,1]]
+        test_idx = test_idx + c_idx[c_num_mat[i,0]+c_num_mat[i,1]:c_num_mat[i,0]+c_num_mat[i,1]+c_num_mat[i,2]]
+
+    random.shuffle(train_idx)
+
+    #ipdb.set_trace()
+
+    train_idx = torch.LongTensor(train_idx)
+    val_idx = torch.LongTensor(val_idx)
+    test_idx = torch.LongTensor(test_idx)
+    #c_num_mat = torch.LongTensor(c_num_mat)
+
+
+    return train_idx, val_idx, test_idx, c_num_mat
 
 
 def print_edges_num(dense_adj, labels):
@@ -369,7 +369,7 @@ def compute_similarity(embeddings):
 #     similarity_matrix = torch.mm(norm_features, norm_features.t())
 #     return similarity_matrix
 
-def sparsify_graph(homey_adj_matrix, threshold=0.2, k=5):
+def sparsify_graph(homey_adj_matrix, threshold=0.2, k=20):
     # Filter unnecessary neighbors
     filtered_adj_matrix = torch.where(homey_adj_matrix.abs() > threshold, homey_adj_matrix, torch.zeros_like(homey_adj_matrix))
 
