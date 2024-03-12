@@ -10,11 +10,11 @@ CPU
 * scipy
 * sklearn
 ### Command in Terminal to Run Code
-##### Run Pretrain
+#### Run Pretrain
 python main.py --imbalance --dataset=amazon --setting='recon'
 
 **In checkpoint file, change recon_300_False_0.5.pth to Pretrained.pth.pth, then run finetune**
-##### Run Finetune
+#### Run Finetune
 python main.py --imbalance --dataset=amazon --setting='newG_cls' --load=Pretrained.pth
 
 ## Improved GraphSmote
