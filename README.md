@@ -51,6 +51,12 @@ python main.py --imbalance --dataset=amazon --setting='newG_cls' --load=Pretrain
 
 # Visualization Generation
 ### dependencies
+* dgl
+* torch
+* matplotlib
+* numpy
+* networkx
+* seaborn
 
 # Baseline Models
 ### dependencies
