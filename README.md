@@ -39,7 +39,6 @@ python main.py --imbalance --dataset=amazon --setting='newG_cls' --load=Pretrain
 
 # Baseline Models
 ### dependencies
-Jupyter Notebook
 * torch
 * Numpy==1.21.5
 * Pytorch==1.10.1
@@ -47,5 +46,3 @@ Jupyter Notebook
 * pygod == 1.1.0
 * sklearn
 * functools
-
-### .ipynb files worked on JupiterNotebook
