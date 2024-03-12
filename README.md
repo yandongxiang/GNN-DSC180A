@@ -1,31 +1,46 @@
 # GNN-DSC180A
 
+## Requirements
+pip install -r /path/to/requirements.txt
+
 ## GraphSMOTE
 ### dependencies
 CPU
-* python3
-* ipdb
-* pytorch1.0
-* network 2.4
+* argparse
+* numpy
 * scipy
-* sklearn
+* matplotlib
+* torch
+* torch-geometric
+* dgl
+* networkx
+* scikit-learn
+* ipdb
+* pygod
+
 ### Command in Terminal to Run Code
 #### Run Pretrain
 python main.py --imbalance --dataset=amazon --setting='recon'
 
-**In checkpoint file, change recon_300_False_0.5.pth to Pretrained.pth.pth, then run finetune**
+**In checkpoint file, change "recon_300_False_0.5.pth" to "Pretrained.pth.pth", then run finetune**
 #### Run Finetune
 python main.py --imbalance --dataset=amazon --setting='newG_cls' --load=Pretrained.pth
 
 ## Improved GraphSmote
 ### dependencies
 CPU
-* python3
-* ipdb
-* pytorch1.0
-* network 2.4
+* argparse
+* numpy
 * scipy
-* sklearn
+* matplotlib
+* torch
+* torch-geometric
+* dgl
+* networkx
+* scikit-learn
+* ipdb
+* pygod
+
 ### Command in Terminal to Run Code
 #### Run Pretrain
 python main.py --imbalance --dataset=amazon --setting='recon'
