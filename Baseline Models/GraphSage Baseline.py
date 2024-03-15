@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dgl import DGLGraph
-from dgl.nn import GINConv
+from dgl.nn import SAGEConv
 import numpy as np
 from pygod.utils import load_data as pygod_load_data
 from sklearn.metrics import roc_auc_score
@@ -367,98 +367,54 @@ g3 = dgl.graph((reddit.edge_index[0], reddit.edge_index[1]))
 g3.ndata['feature'] = reddit.x
 g3.ndata['label'] = reddit.y.type(torch.LongTensor)
 
-num_nodes = g3.number_of_nodes()
-indices = np.random.permutation(num_nodes)
 
-# Assuming 80% training, 20% testing split
-train_size = int(num_nodes * 0.8)
+class GraphSAGE(torch.nn.Module):
+    def __init__(self, in_feats, h_feats, num_classes):
+        super(GraphSAGE, self).__init__()
+        self.conv1 = SAGEConv(in_feats=in_feats, out_feats=h_feats, aggregator_type='mean')
+        self.conv2 = SAGEConv(in_feats=h_feats, out_feats=num_classes, aggregator_type='mean')
 
-train_mask = torch.zeros(num_nodes, dtype=torch.bool)
-test_mask = torch.zeros(num_nodes, dtype=torch.bool)
-
-train_mask[indices[:train_size]] = True
-test_mask[indices[train_size:]] = True
-
-# Assign the masks to your graph
-g3.ndata['train_mask'] = train_mask
-g3.ndata['test_mask'] = test_mask
-
-
-class ApplyNodeFunc(nn.Module):
-    """
-    This module applies a linear transformation followed by a non-linearity.
-    """
-    def __init__(self, mlp):
-        super(ApplyNodeFunc, self).__init__()
-        self.mlp = mlp
-
-    def forward(self, h):
-        h = self.mlp(h)
+    def forward(self, g, features):
+        h = self.conv1(g, features)
         h = F.relu(h)
+        h = self.conv2(g, h)
         return h
 
-class GINLayer(nn.Module):
-    def __init__(self, in_feats, out_feats):
-        super(GINLayer, self).__init__()
-        self.linear = nn.Linear(in_feats, out_feats)
-        self.apply_func = ApplyNodeFunc(self.linear)
+from sklearn.model_selection import train_test_split
 
-    def forward(self, g, h):
-        ginconv = GINConv(self.apply_func, 'sum')  # 'sum' is the aggregator type
-        return ginconv(g, h)
+# Assuming reddit.y contains binary labels for a binary classification task
+train_mask, test_mask = train_test_split(torch.arange(g3.number_of_nodes()), test_size=0.1, random_state=42)
 
-class GINModel(nn.Module):
-    def __init__(self, in_feats, hidden_feats, out_feats, num_layers):
-        super(GINModel, self).__init__()
-        self.layers = nn.ModuleList()
-        # Input layer
-        self.layers.append(GINLayer(in_feats, hidden_feats))
-        # Hidden layers
-        for i in range(num_layers - 2):
-            self.layers.append(GINLayer(hidden_feats, hidden_feats))
-        # Output layer
-        self.layers.append(GINLayer(hidden_feats, out_feats))
+# Optional: Convert masks to boolean tensors for PyTorch
+train_mask = torch.isin(torch.arange(g3.number_of_nodes()), train_mask)
+test_mask = torch.isin(torch.arange(g3.number_of_nodes()), test_mask)
 
-    def forward(self, g):
-        h = g.ndata['feature']
-        for layer in self.layers:
-            h = layer(g, h)
-        return h
+
+# Initialize the model
+num_classes = len(torch.unique(g3.ndata['label']))
+model = GraphSAGE(g3.ndata['feature'].shape[1], 128, num_classes)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+loss_func = torch.nn.CrossEntropyLoss()
+
+for epoch in range(100):
+    model.train()
+    logits = model(g3, g3.ndata['feature'])
+    loss = loss_func(logits[train_mask], g3.ndata['label'][train_mask])
     
-
-def train(model, g, labels, epochs, lr):
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    for epoch in range(epochs):
-        logits = model(g)
-        loss = F.cross_entropy(logits[g.ndata['train_mask']], labels[g.ndata['train_mask']])
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        print(f'Epoch {epoch}, Loss: {loss.item()}')
-
-
-# Assuming g3 is your graph and it has 'feature' and 'label' as node data
-in_feats = g3.ndata['feature'].shape[1]
-hidden_feats = 64  # Example hidden feature size
-out_feats = len(torch.unique(g3.ndata['label']))  # Number of classes
-num_layers = 3  # Number of GIN layers
-
-model = GINModel(in_feats, hidden_feats, out_feats, num_layers)
-train(model, g3, g3.ndata['label'], epochs=100, lr=0.01)
-
-
-
-model.eval()
-with torch.no_grad():
-    logits = model(g3)
-    test_logits = logits[g3.ndata['test_mask']]
-    test_labels = g3.ndata['label'][g3.ndata['test_mask']]
-
-
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    
+    print(f'Epoch {epoch}, Loss: {loss.item()}')
 
 from sklearn.metrics import roc_auc_score
 
-# Assuming binary classification and logits are output from your model
-probs = torch.softmax(test_logits, dim=1)[:, 1].numpy()  # Probability for the positive class
-auc_score = roc_auc_score(test_labels.numpy(), probs)
-print(f'Test ROC-AUC: {auc_score}')
+model.eval()
+with torch.no_grad():
+    test_logits = model(g3, g3.ndata['feature'])[test_mask]
+    test_probs = torch.softmax(test_logits, dim=1)[:, 1]  # Get probability for the positive class
+    test_labels = g3.ndata['label'][test_mask]
+    
+# Calculate ROC-AUC
+roc_auc = roc_auc_score(test_labels.cpu(), test_probs.cpu())
+print(f'ROC-AUC score: {roc_auc}')
