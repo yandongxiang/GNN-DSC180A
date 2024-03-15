@@ -1,6 +1,7 @@
 # Detecting Fraud With Oversampling Techniques and Sparsity Contraints
 
 **Project Overview**
+
 Fraud detection is prevalent now more than ever due to the massive surge in the usage of online platforms. Many techniques exist to combat fraud; however, they often fail to capture the imbalanced class in data involving fraudulent activities. Our research contributes to the study of such concern with a model that harnesses the strengths of many existing models. We propose a solution that utilizes a combination of oversampling techniques and sparsity constraints to balance and predict fraud data.
 
 
@@ -51,6 +52,7 @@ Project
 
 ### Terminal Command to Run Code
 run designated model
+
 Ex: ```python GAT Baseline.py```
 
 
@@ -60,7 +62,7 @@ Ex: ```python GAT Baseline.py```
 #### Run Pretrain
 ```python main.py --imbalance --dataset=amazon --setting='recon'```
 
-**In checkpoint file, change "recon_300_False_0.5.pth" to "Pretrained.pth.pth", then run finetune**
+*Note: In checkpoint file, change "recon_300_False_0.5.pth" to "Pretrained.pth.pth", then run finetune*
 
 #### Run Finetune
 ```python main.py --imbalance --dataset=amazon --setting='newG_cls' --load=Pretrained.pth```
@@ -72,7 +74,7 @@ Ex: ```python GAT Baseline.py```
 #### Run Pretrain
 ```python main.py --imbalance --dataset=amazon --setting='recon'```
 
-**In checkpoint file, change recon_300_False_0.5.pth to Pretrained.pth.pth, then run finetune**
+*Note: In checkpoint file, change recon_300_False_0.5.pth to Pretrained.pth.pth, then run finetune*
 
 #### Run Finetune
 ```python main.py --imbalance --dataset=amazon --setting='newG_cls' --load=Pretrained.pth```
